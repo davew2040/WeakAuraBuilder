@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "WeakAuraManager": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}
