@@ -41,6 +41,8 @@ namespace WeakAuraManager
             File.Delete(configPath);
 
             await File.WriteAllTextAsync(configPath, fileContents);
+
+            Console.WriteLine($"Wrote new WeakAuras to '{configPath}'");
         }
     }
 }

@@ -6,54 +6,62 @@ using System.Threading.Tasks;
 
 namespace WeakAuraManager.Models
 {
-    internal class TriggerTimedSpell : SpellModel
+    internal class TriggerTimedSpell : BaseSpell
     {
-        private static string TimedDefinitionText = @$"{{
+		private static string TimedDefinitionText = $@"{{
 			[""iconSource""] = -1,
 			[""xOffset""] = 0,
 			[""yOffset""] = 0,
-			[""anchorPoint""] = ""CENTER"",
+			[""anchorPoint""] = ""RIGHT"",
 			[""cooldownSwipe""] = true,
 			[""cooldownEdge""] = false,
-			[""icon""] = true,
 			[""triggers""] = {{
 				{{
 					[""trigger""] = {{
-						[""spellId""] = ""{TemplateHelpers.MakeTag(TemplateHelpers.ReplacementTags.SpellId)}"",
-						[""use_totemName""] = true,
-						[""genericShowOn""] = ""showOnCooldown"",
-						[""unit""] = ""{TemplateHelpers.MakeTag(TemplateHelpers.ReplacementTags.SpellUnit)}"",
-						[""use_unit""] = true,
+						[""use_castType""] = false,
+						[""duration""] = ""5"",
+						[""use_specific_sourceUnit""] = true,
 						[""use_delay""] = false,
-						[""use_track""] = true,
-						[""use_genericShowOn""] = true,
-						[""use_totemType""] = false,
-						[""debuffType""] = ""HELPFUL"",
-						[""type""] = ""event"",
-						[""use_remaining""] = false,
+						[""spellName""] = 0,
 						[""use_absorbHealMode""] = true,
-						[""subeventSuffix""] = ""_CAST_START"",
-						[""duration""] = ""{TemplateHelpers.MakeTag(TemplateHelpers.ReplacementTags.SpellDelay)}"",
+						[""subeventSuffix""] = ""_CAST_SUCCESS"",
+						[""event""] = ""Combat Log"",
+						[""castType""] = ""cast"",
 						[""use_spellId""] = true,
-						[""event""] = ""Spell Cast Succeeded"",
-						[""totemName""] = """",
-						[""realSpellName""] = 0,
-						[""use_spellName""] = true,
-						[""spellIds""] = {{
-						}},
+						[""use_sourceUnit""] = false,
+						[""check""] = ""event"",
+						[""use_track""] = true,
+						[""use_absorbMode""] = true,
+						[""genericShowOn""] = ""showOnCooldown"",
+						[""subeventPrefix""] = ""SPELL"",
+						[""custom_type""] = ""stateupdate"",
+						[""delay""] = 15,
 						[""names""] = {{
 						}},
-						[""subeventPrefix""] = ""SPELL"",
-						[""spellName""] = 0,
-						[""delay""] = 15,
-						[""use_absorbMode""] = true,
+						[""use_cloneId""] = false,
+						[""debuffType""] = ""HELPFUL"",
+						[""use_stage""] = false,
+						[""type""] = ""custom"",
+						[""events""] = ""COMBAT_LOG_EVENT_UNFILTERED:SPELL_CAST_SUCCESS"",
+						[""custom""] = ""\nfunction(allstates, event, _, subEvent, hideCaster, sourceGuid, sourceName, _, _, _, _, _, _, spellID, ...)\n\n    if sourceName and spellID == {TemplateHelpers.MakeTag(TemplateHelpers.ReplacementTags.SpellId)}\n\n    then\n        local type = \""{TemplateHelpers.MakeTag(TemplateHelpers.ReplacementTags.SpellUnit)}\""\n        local key = sourceName .. \"":\"" .. spellID\n\n        if type == \""party\"" or type == \""raid\"" then\n\n            for i = 1, GetNumGroupMembers() do\n                local prefix = IsInRaid() and \""raid\"" or \""party\"" -- ternary operator equivalent\n                local unit = prefix .. i\n\n                local usePlayer = not IsInRaid() and sourceName == UnitName(\""player\"")\n\n                if usePlayer then -- Technically not accurate if same name across realms\n                    unit = \""player\""\n                end\n\n                local unitGuid = UnitGUID(unit)\n\n                if unitGuid == sourceGuid or usePlayer then\n                    local spellInfo = {{GetSpellInfo(spellID)}}\n\n                    allstates[key] = {{\n                        show = true,\n                        changed = true,\n                        progressType = \""timed\"",\n                        duration = {TemplateHelpers.MakeTag(TemplateHelpers.ReplacementTags.SpellTimer)},\n                        name = sourceName,\n                        icon = spellInfo[3],\n                        caster = sourceName,\n                        autoHide = true,\n                        unit = unit\n                    }}\n\n                    return true\n                end\n            end\n        elseif type == \""arena\"" then\n            for i = 1, 5 do\n                local unit = \""arena\"" .. i\n\n                local unitGuid = UnitGUID(unit)\n\n                if (unitGuid ~= nil) then\n                    if unitGuid == sourceGuid then\n                        local spellInfo = {{GetSpellInfo(spellID)}}\n    \n                        allstates[key] = {{\n                            show = true,\n                            changed = true,\n                            progressType = \""timed\"",\n                            duration = {TemplateHelpers.MakeTag(TemplateHelpers.ReplacementTags.SpellTimer)},\n                            name = sourceName,\n                            icon = spellInfo[3],\n                            caster = sourceName,\n                            autoHide = true,\n                            unit = unit\n                        }}\n    \n                        return true\n                    end\n                end\n            end\n        end\n    end\n\n    return false\nend"",				
+						[""use_spellName""] = false,
+						[""use_genericShowOn""] = true,
+						[""custom_hide""] = ""timed"",
+						[""use_unit""] = true,
+						[""realSpellName""] = 0,
+						[""spellIds""] = {{
+						}},
+						[""unit""] = ""player"",
+						[""customTexture""] = """",
+						[""stage_operator""] = ""=="",
 					}},
 					[""untrigger""] = {{
 					}},
 				}}, -- [1]
+				[""disjunctive""] = ""any"",
 				[""activeTriggerMode""] = -10,
 			}},
-			[""internalVersion""] = 65,
+			[""internalVersion""] = 66,
 			[""keepAspectRatio""] = false,
 			[""animation""] = {{
 				[""start""] = {{
@@ -76,119 +84,39 @@ namespace WeakAuraManager.Models
 				}},
 			}},
 			[""desaturate""] = false,
-			[""subRegions""] = {{
-				{{
-					[""type""] = ""subbackground"",
-				}}, -- [1]
-				{{
-					[""text_shadowXOffset""] = 0,
-					[""text_text_format_s_format""] = ""none"",
-					[""text_text""] = ""%s"",
-					[""text_shadowColor""] = {{
-						0, -- [1]
-						0, -- [2]
-						0, -- [3]
-						1, -- [4]
-					}},
-					[""text_selfPoint""] = ""AUTO"",
-					[""text_automaticWidth""] = ""Auto"",
-					[""text_fixedWidth""] = 64,
-					[""anchorYOffset""] = 0,
-					[""text_justify""] = ""CENTER"",
-					[""rotateText""] = ""NONE"",
-					[""type""] = ""subtext"",
-					[""text_color""] = {{
-						1, -- [1]
-						1, -- [2]
-						1, -- [3]
-						1, -- [4]
-					}},
-					[""text_font""] = ""Friz Quadrata TT"",
-					[""text_shadowYOffset""] = 0,
-					[""text_wordWrap""] = ""WordWrap"",
-					[""text_fontType""] = ""OUTLINE"",
-					[""text_anchorPoint""] = ""INNER_BOTTOMRIGHT"",
-					[""text_fontSize""] = 12,
-					[""anchorXOffset""] = 0,
-					[""text_visible""] = true,
-				}}, -- [2]
-				{{
-					[""glowFrequency""] = 0.25,
-					[""glow""] = false,
-					[""useGlowColor""] = false,
-					[""glowScale""] = 1,
-					[""glowLength""] = 10,
-					[""glowYOffset""] = 0,
-					[""glowColor""] = {{
-						1, -- [1]
-						1, -- [2]
-						1, -- [3]
-						1, -- [4]
-					}},
-					[""glowType""] = ""buttonOverlay"",
-					[""glowXOffset""] = 0,
-					[""type""] = ""subglow"",
-					[""glowThickness""] = 1,
-					[""glowLines""] = 8,
-					[""glowBorder""] = false,
-				}}, -- [3]
-			}},
+			[""subRegions""] = {TemplateHelpers.MakeTag(TemplateHelpers.ReplacementTags.SubregionsDefinition)},
 			[""height""] = {TemplateHelpers.MakeTag(TemplateHelpers.ReplacementTags.WeakAuraSize)},
-			[""load""] = {{
-				[""talent""] = {{
-					[""multi""] = {{
-					}},
-				}},
-				[""class""] = {{
-					[""multi""] = {{
-					}},
-				}},
-				[""use_class_and_spec""] = true,
-				[""spec""] = {{
-					[""multi""] = {{
-					}},
-				}},
-				[""size""] = {{
-					[""multi""] = {{
-					}},
-				}},
-			}},
+			[""load""] = {TemplateHelpers.MakeTag(TemplateHelpers.ReplacementTags.LoadConstraints)},
 			[""regionType""] = ""icon"",
 			[""displayIcon""] = """",
-			[""cooldown""] = true,
-			[""actions""] = {{
-				[""start""] = {{
-				}},
-				[""init""] = {{
-				}},
-				[""finish""] = {{
-				}},
-			}},
+			[""selfPoint""] = ""LEFT"",
 			[""parent""] = ""{TemplateHelpers.MakeTag(TemplateHelpers.ReplacementTags.GroupName)}"",
+			[""cooldown""] = true,
+			[""anchorFrameParent""] = true,
 			[""authorOptions""] = {{
 			}},
-			[""frameStrata""] = 1,
 			[""zoom""] = 0,
+			[""cooldownTextDisabled""] = false,
 			[""config""] = {{
 			}},
-			[""selfPoint""] = ""CENTER"",
-			[""id""] = ""{TemplateHelpers.MakeTag(TemplateHelpers.ReplacementTags.WeakAuraName)}"",
-			[""anchorFrameType""] = ""SCREEN"",
-			[""useCooldownModRate""] = true,
-			[""width""] = {TemplateHelpers.MakeTag(TemplateHelpers.ReplacementTags.WeakAuraSize)},
 			[""alpha""] = 1,
+			[""id""] = ""{TemplateHelpers.MakeTag(TemplateHelpers.ReplacementTags.WeakAuraName)}"",
+			[""anchorFrameType""] = ""SELECTFRAME"",
+			[""frameStrata""] = 1,
+			[""width""] = {TemplateHelpers.MakeTag(TemplateHelpers.ReplacementTags.WeakAuraSize)},
+			[""useCooldownModRate""] = true,
 			[""inverse""] = false,
-			[""cooldownTextDisabled""] = false,
-			[""conditions""] = {{
-			}},
-			[""information""] = {{
-			}},
 			[""color""] = {{
 				1, -- [1]
 				1, -- [2]
 				1, -- [3]
 				1, -- [4]
 			}},
+			[""conditions""] = {{
+			}},
+			[""information""] = {{
+			}},
+			[""icon""] = true,
 		}}";
 
 		public double TimerDuration { get; set; }
@@ -212,11 +140,11 @@ namespace WeakAuraManager.Models
 			this.TimerDuration = double.Parse(duration);
         }
 
-        public override string GetWeakaura(string groupName, string spellUnit)
+        public override string GetWeakaura(GroupBuilder.GroupBuilderParameters groupParams)
         {
-            var replaceTable = base.GetBaseReplacementTable(groupName, spellUnit);
+            var replaceTable = base.GetBaseReplacementTable(groupParams);
 
-			replaceTable.Add(TemplateHelpers.ReplacementTags.SpellDelay, this.TimerDuration.ToString());
+			replaceTable.Add(TemplateHelpers.ReplacementTags.SpellTimer, this.TimerDuration.ToString());
 
             var replaced = TemplateHelpers.Replace(TimedDefinitionText, replaceTable);
 

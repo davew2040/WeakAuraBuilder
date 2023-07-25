@@ -1,11 +1,14 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Google.Apis.Sheets.v4.Data;
+using Microsoft.Extensions.Configuration;
 using NLua;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using WeakAuraManager.Constants;
 using WeakAuraManager.Models;
 using static System.Net.Mime.MediaTypeNames;
 
@@ -14,160 +17,65 @@ namespace WeakAuraManager
     internal class FileGenerator : IFileGenerator
     {
         private readonly IConfiguration _configuration;
+        private readonly IGroupBuilder _groupBuilder;
 
-		private static string GroupTemplate = @$"{{
-			[""arcLength""] = 360,
-			[""controlledChildren""] = {{
-				{TemplateHelpers.MakeTag(TemplateHelpers.ReplacementTags.GroupWeakAuras)}
-			}},
-			[""borderBackdrop""] = ""Blizzard Tooltip"",
-			[""authorOptions""] = {{
-			}},
-			[""groupIcon""] = 369278,
-			[""gridType""] = ""RD"",
-			[""fullCircle""] = true,
-			[""useAnchorPerUnit""] = true,
-			[""actions""] = {{
-				[""start""] = {{
-				}},
-				[""init""] = {{
-				}},
-				[""finish""] = {{
-				}},
-			}},
-			[""triggers""] = {{
-				{{
-					[""trigger""] = {{
-						[""names""] = {{
-						}},
-						[""type""] = ""aura2"",
-						[""spellIds""] = {{
-						}},
-						[""subeventSuffix""] = ""_CAST_START"",
-						[""unit""] = ""{TemplateHelpers.MakeTag(TemplateHelpers.ReplacementTags.SpellUnit)}"",
-						[""subeventPrefix""] = ""SPELL"",
-						[""event""] = ""Health"",
-						[""debuffType""] = ""HELPFUL"",
-					}},
-					[""untrigger""] = {{
-					}},
-				}}, -- [1]
-			}},
-			[""columnSpace""] = 1,
-			[""internalVersion""] = 65,
-			[""useLimit""] = true,
-			[""align""] = ""LEFT"",
-			[""config""] = {{
-			}},
-			[""borderColor""] = {{
-				0, -- [1]
-				0, -- [2]
-				0, -- [3]
-				1, -- [4]
-			}},
-			[""rotation""] = 0,
-			[""space""] = 3,
-			[""radius""] = 200,
-			[""subRegions""] = {{
-			}},
-			[""stagger""] = 0,
-			[""selfPoint""] = ""TOPLEFT"",
-			[""load""] = {{
-				[""size""] = {{
-					[""multi""] = {{
-					}},
-				}},
-				[""spec""] = {{
-					[""multi""] = {{
-					}},
-				}},
-				[""class""] = {{
-					[""multi""] = {{
-					}},
-				}},
-				[""talent""] = {{
-					[""multi""] = {{
-					}},
-				}},
-			}},
-			[""anchorPoint""] = ""TOPRIGHT"",
-			[""backdropColor""] = {{
-				1, -- [1]
-				1, -- [2]
-				1, -- [3]
-				0.5, -- [4]
-			}},
-			[""borderInset""] = 1,
-			[""animate""] = true,
-			[""grow""] = ""RIGHT"",
-			[""scale""] = 1,
-			[""centerType""] = ""LR"",
-			[""border""] = false,
-			[""anchorFrameFrame""] = ""PlayerFrame"",
-			[""regionType""] = ""dynamicgroup"",
-			[""hybridPosition""] = ""hybridFirst"",
-			[""anchorPerUnit""] = ""UNITFRAME"",
-			[""rowSpace""] = 1,
-			[""gridWidth""] = 5,
-			[""hybridSortMode""] = ""ascending"",
-			[""constantFactor""] = ""RADIUS"",
-			[""limit""] = 3,
-			[""borderOffset""] = 4,
-			[""animation""] = {{
-				[""start""] = {{
-					[""type""] = ""none"",
-					[""easeStrength""] = 3,
-					[""duration_type""] = ""seconds"",
-					[""easeType""] = ""none"",
-				}},
-				[""main""] = {{
-					[""type""] = ""none"",
-					[""easeStrength""] = 3,
-					[""duration_type""] = ""seconds"",
-					[""easeType""] = ""none"",
-				}},
-				[""finish""] = {{
-					[""type""] = ""none"",
-					[""easeStrength""] = 3,
-					[""duration_type""] = ""seconds"",
-					[""easeType""] = ""none"",
-				}},
-			}},
-			[""borderEdge""] = ""Square Full White"",
-			[""id""] = ""Party Buffs"",
-			[""anchorFrameParent""] = false,
-			[""frameStrata""] = 1,
-			[""anchorFrameType""] = ""SELECTFRAME"",
-			[""sort""] = ""none"",
-			[""uid""] = ""lFeUDmPkvab"",
-			[""borderSize""] = 2,
-			[""xOffset""] = 10,
-			[""conditions""] = {{
-			}},
-			[""information""] = {{
-			}},
-			[""yOffset""] = 0
-		}}";
+        private const int XBuffer = 8;
+        private const int DebuffExtraBuffer = 18;
+        private const int YBuffer = 14;
 
-        public FileGenerator(IConfiguration configuration)
+        private static BorderDetails BuffBorder = new BorderDetails
+        {
+            AuraColor = new AuraColor
+            {
+                Red = 0,
+                Green = 1,
+                Blue = 0,
+                Alpha = 1
+            },
+            BorderSize = 2
+        };
+
+        private static BorderDetails DebuffBorder = new BorderDetails
+        {
+            AuraColor = new AuraColor
+            {
+                Red = 1,
+                Green = 0,
+                Blue = 0,
+                Alpha = 1
+            },
+            BorderSize = 2
+        };
+
+        public FileGenerator(IConfiguration configuration, IGroupBuilder groupBuilder)
         {
             _configuration = configuration;
+            _groupBuilder = groupBuilder;
         }
 
-		public async Task<string> GenerateFileContents(string initialLuaContent, IEnumerable<SpellModel> spells)
+		public async Task<string> GenerateFileContents(string initialLuaContent, IEnumerable<BaseSpell> spells)
 		{
 			try
 			{
-				// TODO - add another unit types?
-				var spellUnit = "party";
-
-				string groupName = GetGroupName();
+				string groupName = GetGroupPrefix();
 
 				Lua state = new Lua();
 
 				state.DoString(initialLuaContent);
 
-				this.AddGroups(state, spells, spellUnit);
+                var weakAurasTable = GetTableByPath(new List<string> { "WeakAurasSaved", "displays" }, state);
+
+                var prefix = _configuration.GetValue<string>(ConfigKeys.GroupPrefix);
+                var existingKeys = weakAurasTable.Keys.Cast<string>().Where(k => k.StartsWith(prefix));
+
+                foreach (var key in existingKeys)
+                {
+                    weakAurasTable[key] = null;
+                }
+
+                Console.WriteLine($"Deleted existing {existingKeys.Count()} buffs starting with '{prefix}'");
+
+				this.AddGroups(state, spells);
 
 				AddLuaHelpers(state);
 
@@ -181,55 +89,227 @@ namespace WeakAuraManager
 			}
 		}
 
-		private void AddGroups(Lua state, IEnumerable<SpellModel> spells, string spellUnit)
+		private void AddGroups(Lua state, IEnumerable<BaseSpell> allSpells)
 		{
-			AddGroup(
-				_configuration.GetValue<string>(ConfigKeys.GroupName) + " - Buffs", 
+            int defaultSize = _configuration.GetValue<int>(ConfigKeys.DefaultSize);
+            var groupPrefix = _configuration.GetValue<string>(ConfigKeys.GroupPrefix);
+
+            // Buffs 
+
+            AddGroup(
 				state, 
-				spells.Where(s => s.SpellType == SpellType.SelfBuff || s.SpellType == SpellType.TriggerTimed), 
-				spellUnit
+				this.GetBuffs(allSpells, defaultSize), 
+                new GroupBuilder.GroupBuilderParameters
+                {
+                    GroupName = $"{groupPrefix}/Buffs/Party",
+                    SpellUnit = Units.Party,
+                    XOffset = XBuffer,
+                    YOffset = -10,
+                    DefaultSize = defaultSize,
+                    FrameType = GroupBuilder.FrameType.Party,
+                    AnchorPoint = AnchorPoints.TopRight,
+                    SelfAnchor = AnchorPoints.TopLeft,
+                    BorderColor = BuffBorder.AuraColor,
+                    BorderThickness = BuffBorder.BorderSize,
+                    UseBorder = true
+                }
 			);
 
-			AddGroup(
-				_configuration.GetValue<string>(ConfigKeys.GroupName) + " - Debuffs", 
+            AddGroup(
+                state,
+                this.GetBuffs(allSpells, defaultSize),
+                new GroupBuilder.GroupBuilderParameters
+                {
+                    GroupName = $"{groupPrefix}/Buffs/ArenaFriendlies",
+                    SpellUnit = Units.Party,
+                    XOffset = XBuffer,
+                    YOffset = -10,
+                    DefaultSize = defaultSize,
+                    FrameType = GroupBuilder.FrameType.ArenaFriendlies,
+                    AnchorPoint = AnchorPoints.TopRight,
+                    SelfAnchor = AnchorPoints.TopLeft,
+                    BorderColor = BuffBorder.AuraColor,
+                    BorderThickness = BuffBorder.BorderSize,
+                    UseBorder = true
+                }
+            );
+
+            AddGroup(
+                state,
+                this.GetBuffs(allSpells, defaultSize),
+                new GroupBuilder.GroupBuilderParameters
+                {
+                    GroupName = $"{groupPrefix}/Buffs/ArenaEnemies",
+                    SpellUnit = Units.Arena,
+                    XOffset = XBuffer,
+                    YOffset = -10,
+                    DefaultSize = defaultSize,
+                    FrameType = GroupBuilder.FrameType.ArenaEnemies,
+                    AnchorPoint = AnchorPoints.TopRight,
+                    SelfAnchor = AnchorPoints.TopLeft,
+                    BorderColor = BuffBorder.AuraColor,
+                    BorderThickness = BuffBorder.BorderSize,
+                    UseBorder = true
+                }
+            );
+
+            if (_configuration.GetValue<bool>(ConfigKeys.AddRaidBuffs))
+            {
+                int raidDefaultSize = _configuration.GetValue<int>(ConfigKeys.RaidDefaultSize);
+
+                AddGroup(
+                    state,
+                    this.GetRaidBuffs(allSpells, raidDefaultSize),
+                    new GroupBuilder.GroupBuilderParameters
+                    {
+                        GroupName = $"{groupPrefix}/Buffs/Raid",
+                        SpellUnit = Units.Raid,
+                        XOffset = -5,
+                        YOffset = 5,
+                        DefaultSize = raidDefaultSize,
+                        FrameType = GroupBuilder.FrameType.Raid,
+                        ShowText = false,
+                        AnchorPoint = AnchorPoints.BottomRight,
+                        SelfAnchor = AnchorPoints.BottomRight,
+                        GrowDirection = GrowDirections.Left,
+                        BorderColor = BuffBorder.AuraColor,
+                        BorderThickness = BuffBorder.BorderSize,
+                        UseBorder = true
+                    }
+                );
+            }
+
+            // Debuffs
+
+            AddGroup( 
 				state, 
-				spells.Where(s => s.SpellType == SpellType.EnemyDebuff), 
-				spellUnit
-			);
+				this.GetDebuffs(allSpells, defaultSize),
+                new GroupBuilder.GroupBuilderParameters
+                {
+                    GroupName = $"{groupPrefix}/Debuffs/Party",
+                    SpellUnit = Units.Party,
+                    XOffset = XBuffer + DebuffExtraBuffer,
+                    YOffset = -YBuffer-defaultSize,
+                    DefaultSize = defaultSize,
+                    FrameType = GroupBuilder.FrameType.Party,
+                    AnchorPoint = AnchorPoints.TopRight,
+                    SelfAnchor = AnchorPoints.TopLeft,
+                    BorderColor = DebuffBorder.AuraColor,
+                    BorderThickness = DebuffBorder.BorderSize,
+                    UseBorder = true
+                }
+            );
+
+            // target debuffs - fixme debug
+            AddGroup(
+                state,
+                this.GetDebuffs(allSpells, defaultSize),
+                new GroupBuilder.GroupBuilderParameters
+                {
+                    GroupName = $"{groupPrefix}/Debuffs/Target",
+                    SpellUnit = Units.Target,
+                    XOffset = XBuffer,
+                    YOffset = -10 - YBuffer,
+                    DefaultSize = defaultSize,
+                    FrameType = GroupBuilder.FrameType.Party,
+                    AnchorPoint = AnchorPoints.TopRight,
+                    SelfAnchor = AnchorPoints.TopLeft,
+                    BorderColor = DebuffBorder.AuraColor,
+                    BorderThickness = DebuffBorder.BorderSize,
+                    UseBorder = true
+                }
+            );
+
+            AddGroup(
+                state,
+                this.GetDebuffs(allSpells, defaultSize),
+                new GroupBuilder.GroupBuilderParameters
+                {
+                    GroupName = $"{groupPrefix}/Debuffs/ArenaFriendlies",
+                    SpellUnit = Units.Party,
+                    XOffset = XBuffer + DebuffExtraBuffer,
+                    YOffset = -10 - YBuffer,
+                    DefaultSize = defaultSize,
+                    FrameType = GroupBuilder.FrameType.ArenaFriendlies,
+                    AnchorPoint = AnchorPoints.TopRight,
+                    SelfAnchor = AnchorPoints.TopLeft,
+                    BorderColor = DebuffBorder.AuraColor,
+                    BorderThickness = DebuffBorder.BorderSize,
+                    UseBorder = true
+                }
+            );
+
+            AddGroup(
+                state,
+                this.GetDebuffs(allSpells, defaultSize),
+                new GroupBuilder.GroupBuilderParameters
+                {
+                    GroupName = $"{groupPrefix}/Debuffs/ArenaEnemies",
+                    SpellUnit = Units.Arena,
+                    XOffset = XBuffer,
+                    YOffset = -10- YBuffer,
+                    DefaultSize = defaultSize,
+                    FrameType = GroupBuilder.FrameType.ArenaEnemies,
+                    AnchorPoint = AnchorPoints.TopRight,
+                    SelfAnchor = AnchorPoints.TopLeft,
+                    BorderColor = DebuffBorder.AuraColor,
+                    BorderThickness = DebuffBorder.BorderSize,
+                    UseBorder = true
+                }
+            );
         }
 
-		private void AddGroup(string groupName, Lua state, IEnumerable<SpellModel> spells, string spellUnit)
+        private IEnumerable<BaseSpell> GetDebuffs(IEnumerable<BaseSpell> all, int defaultSize)
+        {
+            var debuffs = all.Where(s => s.SpellType == SpellType.EnemyDebuff)
+                .Concat(new List<BaseSpell> { new NpcDebuffSpell(defaultSize) });
+
+            if (_configuration.GetValue<bool>(ConfigKeys.AddTestAnchor))
+            {
+                debuffs = debuffs.Concat(new List<BaseSpell> { new TestAnchorSpell(defaultSize) });
+            }
+
+            return debuffs;
+        }
+
+        private IEnumerable<BaseSpell> GetBuffs(IEnumerable<BaseSpell> all, int defaultSize)
+        {
+            var buffs = all.Where(s => s.SpellType == SpellType.SelfBuff || s.SpellType == SpellType.TriggerTimed);
+
+            if (_configuration.GetValue<bool>(ConfigKeys.AddTestAnchor))
+            {
+                buffs = buffs.Concat(new List<BaseSpell> { new TestAnchorSpell(defaultSize) });
+            }
+
+            return buffs;
+        }
+
+        private IEnumerable<BaseSpell> GetRaidBuffs(IEnumerable<BaseSpell> all, int baseSize)
+        {
+            return this.GetBuffs(all, baseSize).Where(x => x.ShowInRaid);
+        }
+
+
+        private void AddGroup(Lua state, IEnumerable<BaseSpell> spells, GroupBuilder.GroupBuilderParameters groupParams)
 		{
             var displaysTable = (state["WeakAurasSaved"] as LuaTable)["displays"] as LuaTable;
 
-            if (displaysTable.Keys.Cast<string>().Any(k => k == groupName))
+            if (displaysTable.Keys.Cast<string>().Any(k => k == groupParams.GroupName))
             {
-                throw new Exception($"WeakAuras file already contains group name '{groupName}'");
+                throw new Exception($"WeakAuras file already contains group name '{groupParams.GroupName}'");
             }
 
-            var spellDefinitions = spells.OrderByDescending(s => s.Size).Select(s => new { original = s, text = s.GetWeakaura(groupName, spellUnit) });
+            var spellDefinitions = spells.OrderByDescending(s => s.Priority).Select(s => new { original = s, text = s.GetWeakaura(groupParams) });
 
             foreach (var spellDefinition in spellDefinitions)
             {
-                InsertLuaText(spellDefinition.text, state, $"WeakAurasSaved.displays[\"{spellDefinition.original.GetWeakauraName(groupName)}\"]");
+                InsertLuaText(spellDefinition.text, state, $"WeakAurasSaved.displays[\"{spellDefinition.original.GetWeakauraName(groupParams.GroupName)}\"]");
             }
 
-            var groupText = GetGroupText(spellDefinitions.Select(s => s.original), groupName, spellUnit);
+            var groupText = _groupBuilder.GetGroupText(spellDefinitions.Select(s => s.original), groupParams);
 
-            InsertLuaText(groupText, state, $"WeakAurasSaved.displays[\"{groupName}\"]");
+            InsertLuaText(groupText, state, $"WeakAurasSaved.displays[\"{groupParams.GroupName}\"]");
         }
-
-        private string GetGroupText(IEnumerable<SpellModel> spells, string groupName, string spellUnit)
-		{
-			var tabTable = new Dictionary<string, string>()
-			{
-				{ TemplateHelpers.ReplacementTags.GroupWeakAuras, string.Join(",\n", spells.Select(s => $"\"{s.GetWeakauraName(groupName)}\"")) },
-				{ TemplateHelpers.ReplacementTags.GroupName, groupName },
-				{ TemplateHelpers.ReplacementTags.SpellUnit, spellUnit },
-			};
-
-			return TemplateHelpers.Replace(GroupTemplate, tabTable);
-		}
 
 		private void InsertLuaText(string luaText, Lua state, string outputPath)
 		{
@@ -260,7 +340,7 @@ namespace WeakAuraManager
             }
         }
 
-        private string GetGroupName() => _configuration.GetValue<string>(ConfigKeys.GroupName);
+        private string GetGroupPrefix() => _configuration.GetValue<string>(ConfigKeys.GroupPrefix);
 
         private Dictionary<object, object> ToTable(LuaTable luaTable)
         {
@@ -308,83 +388,6 @@ namespace WeakAuraManager
 
         private void AddLuaHelpers(Lua luaState)
         {
-//            luaState.DoString(@"function table.show(t, name, indent)
-//   local cart     -- a container
-//   local autoref  -- for self references
-
-//   --[[ counts the number of elements in a table
-//   local function tablecount(t)
-//      local n = 0
-//      for _, _ in pairs(t) do n = n+1 end
-//      return n
-//   end
-//   ]]
-//   -- (RiciLake) returns true if the table is empty
-//   local function isemptytable(t) return next(t) == nil end
-
-//   local function basicSerialize (o)
-//      local so = tostring(o)
-//      if type(o) == ""function"" then
-//         local info = debug.getinfo(o, ""S"")
-//         -- info.name is nil because o is not a calling level
-//         if info.what == ""C"" then
-//            return string.format(""%q"", so .. "", C function"")
-//         else 
-//            -- the information is defined through lines
-//            return string.format(""%q"", so .. "", defined in ("" ..
-//                info.linedefined .. ""-"" .. info.lastlinedefined ..
-//                "")"" .. info.source)
-//         end
-//      elseif type(o) == ""number"" or type(o) == ""boolean"" then
-//         return so
-//      else
-//         return string.format(""%q"", so)
-//      end
-//   end
-
-//   local function addtocart (value, name, indent, saved, field)
-//      indent = indent or """"
-//      saved = saved or {}
-//      field = field or name
-
-//      cart = cart .. indent .. field
-
-//      if type(value) ~= ""table"" then
-//         cart = cart .. "" = "" .. basicSerialize(value) .. "";\n""
-//      else
-//         if saved[value] then
-//            cart = cart .. "" = {}; -- "" .. saved[value] 
-//                        .. "" (self reference)\n""
-//            autoref = autoref ..  name .. "" = "" .. saved[value] .. "";\n""
-//         else
-//            saved[value] = name
-//            --if tablecount(value) == 0 then
-//            if isemptytable(value) then
-//               cart = cart .. "" = {};\n""
-//            else
-//               cart = cart .. "" = {\n""
-//               for k, v in pairs(value) do
-//                  k = basicSerialize(k)
-//                  local fname = string.format(""%s[%s]"", name, k)
-//                  field = string.format(""[%s]"", k)
-//                  -- three spaces between levels
-//                  addtocart(v, fname, indent .. ""   "", saved, field)
-//               end
-//               cart = cart .. indent .. ""};\n""
-//            end
-//         end
-//      end
-//   end
-
-//   name = name or ""__unnamed__""
-//   if type(t) ~= ""table"" then
-//      return name .. "" = "" .. basicSerialize(t)
-//   end
-//   cart, autoref = """", """"
-//   addtocart(t, name, indent)
-//   return cart .. autoref
-//end");
-
             luaState.DoString(@"local no_identity = { number=1, boolean=1, string=1, ['nil']=1 }
 
 function serialize (x)
@@ -537,5 +540,11 @@ function serialize (x)
    end
 end");
 		}
+
+        private class BorderDetails
+        {
+            public int BorderSize { get; set; }
+            public AuraColor AuraColor { get; set; }
+        }
     }
 }

@@ -7,20 +7,11 @@ using WeakAuraManager;
 
 namespace WeakAuraManager.Models
 {
-    public class BuffSpell : BaseSpell
+    public class NpcDebuffSpell : BaseSpell
     {
         private static string TextTemplate = $@"{{
 			[""iconSource""] = -1,
-			[""authorOptions""] = {{
-				{{
-					[""type""] = ""toggle"",
-					[""useDesc""] = false,
-					[""key""] = ""option"",
-					[""name""] = ""Option 1"",
-					[""default""] = false,
-					[""width""] = 1,
-				}}, -- [1]
-			}},
+			[""parent""] = ""{TemplateHelpers.MakeTag(TemplateHelpers.ReplacementTags.GroupName)}"",
 			[""yOffset""] = 0,
 			[""anchorPoint""] = ""CENTER"",
 			[""cooldownSwipe""] = true,
@@ -31,20 +22,18 @@ namespace WeakAuraManager.Models
 					[""trigger""] = {{
 						[""showClones""] = true,
 						[""type""] = ""aura2"",
-						[""auraspellids""] = {{
-							""{TemplateHelpers.MakeTag(TemplateHelpers.ReplacementTags.SpellId)}"", -- [1]
-						}},
-						[""event""] = ""Health"",
-						[""subeventPrefix""] = ""SPELL"",
-						[""useExactSpellId""] = true,
-						[""spellIds""] = {{
-						}},
 						[""subeventSuffix""] = ""_CAST_START"",
-						[""useName""] = false,
+						[""event""] = ""Health"",
+						[""unit""] = ""{TemplateHelpers.MakeTag(TemplateHelpers.ReplacementTags.SpellUnit)}"",
 						[""names""] = {{
 						}},
-						[""unit""] = ""{TemplateHelpers.MakeTag(TemplateHelpers.ReplacementTags.SpellUnit)}"",
-						[""debuffType""] = ""HELPFUL"",
+						[""spellIds""] = {{
+						}},
+						[""useName""] = false,
+						[""useExactSpellId""] = false,
+						[""use_castByPlayer""] = false,
+						[""subeventPrefix""] = ""SPELL"",
+						[""debuffType""] = ""HARMFUL"",
 					}},
 					[""untrigger""] = {{
 					}},
@@ -61,63 +50,73 @@ namespace WeakAuraManager.Models
 			[""authorMode""] = true,
 			[""regionType""] = ""icon"",
 			[""cooldown""] = true,
+			[""animation""] = {{
+				[""start""] = {{
+					[""duration_type""] = ""seconds"",
+					[""easeStrength""] = 3,
+					[""type""] = ""none"",
+					[""easeType""] = ""none"",
+				}},
+				[""main""] = {{
+					[""duration_type""] = ""seconds"",
+					[""easeStrength""] = 3,
+					[""type""] = ""none"",
+					[""easeType""] = ""none"",
+				}},
+				[""finish""] = {{
+					[""duration_type""] = ""seconds"",
+					[""easeStrength""] = 3,
+					[""type""] = ""none"",
+					[""easeType""] = ""none"",
+				}},
+			}},
 			[""xOffset""] = 0,
-			[""parent""] = ""{TemplateHelpers.MakeTag(TemplateHelpers.ReplacementTags.GroupName)}"",
 			[""actions""] = {{
 				[""start""] = {{
 				}},
-				[""init""] = {{
-				}},
 				[""finish""] = {{
 				}},
+				[""init""] = {{
+				}},
 			}},
+			[""alpha""] = 1,
+			[""cooldownTextDisabled""] = false,
 			[""color""] = {{
 				1, -- [1]
 				1, -- [2]
 				1, -- [3]
 				1, -- [4]
 			}},
-			[""cooldownTextDisabled""] = false,
+			[""id""] = ""{TemplateHelpers.MakeTag(TemplateHelpers.ReplacementTags.WeakAuraName)}"",
+			[""width""] = {TemplateHelpers.MakeTag(TemplateHelpers.ReplacementTags.WeakAuraSize)},
+			[""frameStrata""] = 1,
+			[""anchorFrameType""] = ""SCREEN"",
 			[""useCooldownModRate""] = true,
 			[""config""] = {{
 				[""option""] = false,
 			}},
-			[""id""] = ""{TemplateHelpers.MakeTag(TemplateHelpers.ReplacementTags.WeakAuraName)}"",
-			[""anchorFrameType""] = ""SCREEN"",
-			[""alpha""] = 1,
-			[""width""] = {TemplateHelpers.MakeTag(TemplateHelpers.ReplacementTags.WeakAuraSize)},
-			[""frameStrata""] = 1,
 			[""inverse""] = false,
 			[""zoom""] = 0,
 			[""conditions""] = {{
 			}},
 			[""information""] = {{
 			}},
-			[""animation""] = {{
-				[""start""] = {{
-					[""type""] = ""none"",
-					[""easeStrength""] = 3,
-					[""duration_type""] = ""seconds"",
-					[""easeType""] = ""none"",
-				}},
-				[""main""] = {{
-					[""type""] = ""none"",
-					[""easeStrength""] = 3,
-					[""duration_type""] = ""seconds"",
-					[""easeType""] = ""none"",
-				}},
-				[""finish""] = {{
-					[""type""] = ""none"",
-					[""easeStrength""] = 3,
-					[""duration_type""] = ""seconds"",
-					[""easeType""] = ""none"",
-				}},
+			[""authorOptions""] = {{
+				{{
+					[""type""] = ""toggle"",
+					[""useDesc""] = false,
+					[""key""] = ""option"",
+					[""default""] = false,
+					[""name""] = ""Option 1"",
+					[""width""] = 1,
+				}}, -- [1]
 			}},
 		}}";
 
-		public BuffSpell(int defaultSize): base(defaultSize)
+		public NpcDebuffSpell(int defaultSize): base(defaultSize)
 		{
-            this.SpellType = SpellType.SelfBuff;
+            this.SpellType = SpellType.EnemyDebuff;
+			this.SpellName = "NPC Debuffs";
         }
 
         public override string GetWeakaura(GroupBuilder.GroupBuilderParameters groupParams)

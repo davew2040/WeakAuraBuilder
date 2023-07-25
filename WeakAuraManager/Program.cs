@@ -16,6 +16,7 @@ namespace WeakAuraManager
                     services.AddSingleton<IFileGenerator, FileGenerator>();
                     services.AddSingleton<IParser, Parser>();
                     services.AddSingleton<IFileBackerUpper, FileBackerUpper>();
+                    services.AddSingleton<IGroupBuilder, GroupBuilder>();
                 })
                 .Build();
 

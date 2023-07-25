@@ -18,8 +18,10 @@ namespace WeakAuraManager
             public const int SpellName = 1;
             public const int SpellId = 2;
             public const int SpellTypeTag = 4;
-            public const int Size = 5;
+            public const int SizeMultiplier = 5;
             public const int SpellExtraInfo = 6;
+            public const int Priority = 7;
+            public const int ShowInRaid = 8;
         }
 
         private static class SpellTags
@@ -38,22 +40,18 @@ namespace WeakAuraManager
             _defaultSize = _configuration.GetValue<int>(ConfigKeys.DefaultSize);
         }
 
-        public async Task<IEnumerable<SpellModel>> Parse()
+        public async Task<IEnumerable<BaseSpell>> Parse()
         {
-            // Create the service.
             var service = new SheetsService(new BaseClientService.Initializer
             {
                 ApplicationName = "Discovery Sample",
                 ApiKey = _configuration.GetValue<string>(ConfigKeys.GoogleApiKey),
             });
 
-            //var spreadsheetRequest = service.Spreadsheets.Get(_configuration.GetValue<string>(ConfigKeys.SpreadsheetId));
-            //var spreadsheetResponse = await spreadsheetRequest.ExecuteAsync();
-
-            var request = service.Spreadsheets.Values.Get(_configuration.GetValue<string>(ConfigKeys.SpreadsheetId), "A2:G");
+            var request = service.Spreadsheets.Values.Get(_configuration.GetValue<string>(ConfigKeys.SpreadsheetId), "A2:I");
             var response = await request.ExecuteAsync();
 
-            var results = new List<SpellModel>();
+            var results = new List<BaseSpell>();
 
             foreach (var rowValues in response.Values)
             {

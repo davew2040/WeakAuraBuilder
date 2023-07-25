@@ -7,20 +7,11 @@ using WeakAuraManager;
 
 namespace WeakAuraManager.Models
 {
-    public class BuffSpell : BaseSpell
+    public class TestAnchorSpell : BaseSpell
     {
         private static string TextTemplate = $@"{{
 			[""iconSource""] = -1,
-			[""authorOptions""] = {{
-				{{
-					[""type""] = ""toggle"",
-					[""useDesc""] = false,
-					[""key""] = ""option"",
-					[""name""] = ""Option 1"",
-					[""default""] = false,
-					[""width""] = 1,
-				}}, -- [1]
-			}},
+			[""xOffset""] = 0,
 			[""yOffset""] = 0,
 			[""anchorPoint""] = ""CENTER"",
 			[""cooldownSwipe""] = true,
@@ -29,29 +20,35 @@ namespace WeakAuraManager.Models
 			[""triggers""] = {{
 				{{
 					[""trigger""] = {{
+						[""use_absorbMode""] = true,
+						[""unit""] = ""{TemplateHelpers.MakeTag(TemplateHelpers.ReplacementTags.SpellUnit)}"",
+						[""debuffType""] = ""HARMFUL"",
 						[""showClones""] = true,
-						[""type""] = ""aura2"",
+						[""useName""] = false,
+						[""use_health""] = false,
 						[""auraspellids""] = {{
-							""{TemplateHelpers.MakeTag(TemplateHelpers.ReplacementTags.SpellId)}"", -- [1]
-						}},
-						[""event""] = ""Health"",
-						[""subeventPrefix""] = ""SPELL"",
-						[""useExactSpellId""] = true,
-						[""spellIds""] = {{
+							""221562"", -- [1]
 						}},
 						[""subeventSuffix""] = ""_CAST_START"",
-						[""useName""] = false,
+						[""event""] = ""Health"",
 						[""names""] = {{
 						}},
-						[""unit""] = ""{TemplateHelpers.MakeTag(TemplateHelpers.ReplacementTags.SpellUnit)}"",
-						[""debuffType""] = ""HELPFUL"",
+						[""use_unit""] = true,
+						[""subeventPrefix""] = ""SPELL"",
+						[""spellIds""] = {{
+						}},
+						[""useExactSpellId""] = true,
+						[""health""] = ""0"",
+						[""use_absorbHealMode""] = true,
+						[""type""] = ""unit"",
+						[""health_operator""] = "">"",
 					}},
 					[""untrigger""] = {{
 					}},
 				}}, -- [1]
 				[""activeTriggerMode""] = -10,
 			}},
-			[""internalVersion""] = 65,
+			[""internalVersion""] = 66,
 			[""keepAspectRatio""] = false,
 			[""selfPoint""] = ""CENTER"",
 			[""desaturate""] = false,
@@ -60,16 +57,17 @@ namespace WeakAuraManager.Models
 			[""load""] = {TemplateHelpers.MakeTag(TemplateHelpers.ReplacementTags.LoadConstraints)},
 			[""authorMode""] = true,
 			[""regionType""] = ""icon"",
-			[""cooldown""] = true,
-			[""xOffset""] = 0,
-			[""parent""] = ""{TemplateHelpers.MakeTag(TemplateHelpers.ReplacementTags.GroupName)}"",
-			[""actions""] = {{
-				[""start""] = {{
-				}},
-				[""init""] = {{
-				}},
-				[""finish""] = {{
-				}},
+			[""information""] = {{
+			}},
+			[""authorOptions""] = {{
+				{{
+					[""type""] = ""toggle"",
+					[""default""] = false,
+					[""name""] = ""Option 1"",
+					[""useDesc""] = false,
+					[""key""] = ""option"",
+					[""width""] = 1,
+				}}, -- [1]
 			}},
 			[""color""] = {{
 				1, -- [1]
@@ -77,8 +75,17 @@ namespace WeakAuraManager.Models
 				1, -- [3]
 				1, -- [4]
 			}},
+			[""actions""] = {{
+				[""start""] = {{
+				}},
+				[""finish""] = {{
+				}},
+				[""init""] = {{
+				}},
+			}},
+			[""parent""] = ""{TemplateHelpers.MakeTag(TemplateHelpers.ReplacementTags.GroupName)}"",
 			[""cooldownTextDisabled""] = false,
-			[""useCooldownModRate""] = true,
+			[""frameStrata""] = 1,
 			[""config""] = {{
 				[""option""] = false,
 			}},
@@ -86,38 +93,39 @@ namespace WeakAuraManager.Models
 			[""anchorFrameType""] = ""SCREEN"",
 			[""alpha""] = 1,
 			[""width""] = {TemplateHelpers.MakeTag(TemplateHelpers.ReplacementTags.WeakAuraSize)},
-			[""frameStrata""] = 1,
+			[""useCooldownModRate""] = true,
+			[""uid""] = ""X)PYOk3(TU4"",
 			[""inverse""] = false,
 			[""zoom""] = 0,
 			[""conditions""] = {{
 			}},
-			[""information""] = {{
-			}},
+			[""cooldown""] = true,
 			[""animation""] = {{
 				[""start""] = {{
-					[""type""] = ""none"",
 					[""easeStrength""] = 3,
+					[""type""] = ""none"",
 					[""duration_type""] = ""seconds"",
 					[""easeType""] = ""none"",
 				}},
 				[""main""] = {{
-					[""type""] = ""none"",
 					[""easeStrength""] = 3,
+					[""type""] = ""none"",
 					[""duration_type""] = ""seconds"",
 					[""easeType""] = ""none"",
 				}},
 				[""finish""] = {{
-					[""type""] = ""none"",
 					[""easeStrength""] = 3,
+					[""type""] = ""none"",
 					[""duration_type""] = ""seconds"",
 					[""easeType""] = ""none"",
 				}},
 			}},
 		}}";
 
-		public BuffSpell(int defaultSize): base(defaultSize)
+		public TestAnchorSpell(int defaultSize): base(defaultSize)
 		{
-            this.SpellType = SpellType.SelfBuff;
+            this.SpellType = SpellType.TestAnchor;
+			this.SpellName = "Test Anchor";
         }
 
         public override string GetWeakaura(GroupBuilder.GroupBuilderParameters groupParams)

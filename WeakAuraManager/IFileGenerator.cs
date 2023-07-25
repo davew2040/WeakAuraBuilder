@@ -9,6 +9,6 @@ namespace WeakAuraManager
 {
     internal interface IFileGenerator
     {
-        Task<string> GenerateFileContents(string luaContent, IEnumerable<SpellModel> spells);
+        Task<string> GenerateFileContents(string luaContent, IEnumerable<BaseSpell> spells);
     }
 }

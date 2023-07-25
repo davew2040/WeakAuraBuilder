@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Configuration;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,8 +7,8 @@ using WeakAuraManager.Models;
 
 namespace WeakAuraManager
 {
-    internal interface IParser
+    public interface IGroupBuilder
     {
-        Task<IEnumerable<BaseSpell>> Parse();
+        string GetGroupText(IEnumerable<BaseSpell> spells, GroupBuilder.GroupBuilderParameters groupParams);
     }
 }

@@ -7,7 +7,7 @@ using WeakAuraManager;
 
 namespace WeakAuraManager.Models
 {
-    public class DebuffSpell : SpellModel
+    public class DebuffSpell : BaseSpell
     {
         private static string TextTemplate = $@"{{
 			[""iconSource""] = -1,
@@ -46,83 +46,9 @@ namespace WeakAuraManager.Models
 			[""keepAspectRatio""] = false,
 			[""selfPoint""] = ""CENTER"",
 			[""desaturate""] = false,
-			[""subRegions""] = {{
-				{{
-					[""type""] = ""subbackground"",
-				}}, -- [1]
-				{{
-					[""text_shadowXOffset""] = 0,
-					[""text_text_format_s_format""] = ""none"",
-					[""text_text""] = ""%s"",
-					[""text_shadowColor""] = {{
-						0, -- [1]
-						0, -- [2]
-						0, -- [3]
-						1, -- [4]
-					}},
-					[""text_selfPoint""] = ""AUTO"",
-					[""text_automaticWidth""] = ""Auto"",
-					[""text_fixedWidth""] = 64,
-					[""anchorYOffset""] = 0,
-					[""text_justify""] = ""CENTER"",
-					[""rotateText""] = ""NONE"",
-					[""type""] = ""subtext"",
-					[""text_color""] = {{
-						1, -- [1]
-						1, -- [2]
-						1, -- [3]
-						1, -- [4]
-					}},
-					[""text_font""] = ""Friz Quadrata TT"",
-					[""text_shadowYOffset""] = 0,
-					[""text_wordWrap""] = ""WordWrap"",
-					[""text_fontType""] = ""OUTLINE"",
-					[""text_anchorPoint""] = ""INNER_BOTTOMRIGHT"",
-					[""text_fontSize""] = 12,
-					[""anchorXOffset""] = 0,
-					[""text_visible""] = true,
-				}}, -- [2]
-				{{
-					[""glowFrequency""] = 0.25,
-					[""type""] = ""subglow"",
-					[""glowXOffset""] = 0,
-					[""glowType""] = ""buttonOverlay"",
-					[""glowLength""] = 10,
-					[""glowYOffset""] = 0,
-					[""glowColor""] = {{
-						1, -- [1]
-						1, -- [2]
-						1, -- [3]
-						1, -- [4]
-					}},
-					[""glow""] = false,
-					[""glowThickness""] = 1,
-					[""useGlowColor""] = false,
-					[""glowScale""] = 1,
-					[""glowLines""] = 8,
-					[""glowBorder""] = false,
-				}}, -- [3]
-			}},
+			[""subRegions""] = {TemplateHelpers.MakeTag(TemplateHelpers.ReplacementTags.SubregionsDefinition)},
 			[""height""] = {TemplateHelpers.MakeTag(TemplateHelpers.ReplacementTags.WeakAuraSize)},
-			[""load""] = {{
-				[""use_never""] = false,
-				[""talent""] = {{
-					[""multi""] = {{
-					}},
-				}},
-				[""class""] = {{
-					[""multi""] = {{
-					}},
-				}},
-				[""spec""] = {{
-					[""multi""] = {{
-					}},
-				}},
-				[""size""] = {{
-					[""multi""] = {{
-					}},
-				}},
-			}},
+			[""load""] = {TemplateHelpers.MakeTag(TemplateHelpers.ReplacementTags.LoadConstraints)},
 			[""authorMode""] = true,
 			[""regionType""] = ""icon"",
 			[""cooldown""] = true,
@@ -194,9 +120,9 @@ namespace WeakAuraManager.Models
             this.SpellType = SpellType.EnemyDebuff;
         }
 
-        public override string GetWeakaura(string groupName, string spellUnit)
+        public override string GetWeakaura(GroupBuilder.GroupBuilderParameters groupParams)
         {
-			var replaceTable = base.GetBaseReplacementTable(groupName, spellUnit);
+			var replaceTable = base.GetBaseReplacementTable(groupParams);
 			var replaced = TemplateHelpers.Replace(TextTemplate, replaceTable);
 
 			return replaced;
